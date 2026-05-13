@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { validateWalletAddress } from "../lib/wallet";
 
 const rankRules = [
   {
@@ -48,9 +49,10 @@ export default function Home() {
   const [wallet, setWallet] = useState("");
 
   const hasWallet = wallet.trim().length > 0;
+  const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
 
   const profile = useMemo(() => {
-    if (!hasWallet) return null;
+    if (!hasWallet || !validation.isValid) return null;
 
     const score = wallet
       .trim()
@@ -71,7 +73,7 @@ export default function Home() {
       rank: getRank(dcaDays),
       noSellBadge: getNoSellBadge(noSellDays),
     };
-  }, [wallet, hasWallet]);
+  }, [wallet, hasWallet, validation.isValid]);
 
   return (
     <main className="min-h-screen bg-[#070707] text-white">
@@ -189,6 +191,25 @@ export default function Home() {
               Check status
             </button>
           </div>
+
+          {hasWallet && (
+            <div
+              className={`mt-4 rounded-2xl border p-4 ${
+                validation.isValid
+                  ? "border-green-400/20 bg-green-400/10"
+                  : "border-red-400/20 bg-red-400/10"
+              }`}
+            >
+              <p
+                className={`font-bold ${
+                  validation.isValid ? "text-green-200" : "text-red-200"
+                }`}
+              >
+                {validation.label}
+              </p>
+              <p className="mt-1 text-sm text-white/60">{validation.message}</p>
+            </div>
+          )}
 
           {profile && (
             <div className="mt-6 rounded-2xl border border-orange-300/20 bg-orange-300/10 p-5">
