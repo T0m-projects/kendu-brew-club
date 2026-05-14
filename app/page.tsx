@@ -220,9 +220,8 @@ export default function Home() {
             <div>
               <h3 className="text-2xl font-bold">Wallet checker</h3>
               <p className="mt-2 text-white/60">
-                Paste a public wallet address and preview how a KENDU Brew
-                profile could look. Real on-chain data will be connected in the
-                next development phase.
+                Paste a public EVM wallet address to load real KENDU balances from Ethereum and Base. 
+                Solana, DCA streaks and no-sell tracking are coming next.
               </p>
             </div>
 
