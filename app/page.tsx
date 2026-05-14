@@ -45,11 +45,33 @@ const roadmap = [
   "Community leaderboard",
 ];
 
+type BalanceApiResponse = {
+  wallet: string;
+  symbol: string;
+  balances: {
+    chain: string;
+    raw: string;
+    formatted: string;
+    symbol: string;
+    status: string;
+    error?: string;
+  }[];
+  total: {
+    raw: string;
+    formatted: string;
+  };
+};
+
 export default function Home() {
   const [wallet, setWallet] = useState("");
 
+  const [balanceData, setBalanceData] = useState<BalanceApiResponse | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
+
   const hasWallet = wallet.trim().length > 0;
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
+  const canLoadRealBalance = validation.isValid && validation.type === "evm";
 
   const profile = useMemo(() => {
     if (!hasWallet || !validation.isValid) return null;
@@ -74,6 +96,36 @@ export default function Home() {
       noSellBadge: getNoSellBadge(noSellDays),
     };
   }, [wallet, hasWallet, validation.isValid]);
+
+  async function loadRealBalance() {
+    if (!canLoadRealBalance) return;
+
+    setIsLoadingBalance(true);
+    setBalanceError("");
+    setBalanceData(null);
+
+    try {
+      const response = await fetch(
+        `/api/balance?wallet=${encodeURIComponent(wallet.trim())}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load balance.");
+      }
+
+      setBalanceData(data);
+    } catch (error) {
+      if (error instanceof Error) {
+        setBalanceError(error.message);
+      } else {
+        setBalanceError("Failed to load balance.");
+      }
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#070707] text-white">
@@ -182,32 +234,87 @@ export default function Home() {
           <div className="mt-6 flex flex-col gap-3 md:flex-row">
             <input
               value={wallet}
-              onChange={(e) => setWallet(e.target.value)}
+              onChange={(e) => {
+                setWallet(e.target.value);
+                setBalanceData(null);
+                setBalanceError("");
+              }}
               placeholder="Paste ETH / Base / Solana wallet address"
               className="flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-orange-300"
             />
 
-            <button className="rounded-xl bg-orange-300 px-6 py-3 font-bold text-black transition hover:bg-orange-200">
-              Check status
+            <button
+              onClick={loadRealBalance}
+              disabled={!canLoadRealBalance || isLoadingBalance}
+              className="rounded-xl bg-orange-300 px-6 py-3 font-bold text-black transition hover:bg-orange-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isLoadingBalance ? "Loading..." : "Load real balance"}
             </button>
           </div>
 
-          {hasWallet && (
-            <div
-              className={`mt-4 rounded-2xl border p-4 ${
-                validation.isValid
-                  ? "border-green-400/20 bg-green-400/10"
-                  : "border-red-400/20 bg-red-400/10"
-              }`}
-            >
-              <p
-                className={`font-bold ${
-                  validation.isValid ? "text-green-200" : "text-red-200"
-                }`}
-              >
-                {validation.label}
+          {hasWallet && validation.type === "solana" && (
+            <div className="mt-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4">
+              <p className="font-bold text-yellow-200">Solana support coming soon</p>
+              <p className="mt-1 text-sm text-white/60">
+                Solana wallet format is detected, but real KENDU balance loading is not
+                connected yet.
               </p>
-              <p className="mt-1 text-sm text-white/60">{validation.message}</p>
+            </div>
+          )}
+
+          {balanceError && (
+            <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-4">
+              <p className="font-bold text-red-200">Balance loading failed</p>
+              <p className="mt-1 text-sm text-white/60">{balanceError}</p>
+            </div>
+          )}
+
+          {balanceData && (
+            <div className="mt-6 rounded-2xl border border-orange-300/20 bg-black/30 p-5">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/40">
+                    Real on-chain balance
+                  </p>
+                  <p className="mt-2 text-3xl font-bold text-orange-200">
+                    {balanceData.total.formatted} {balanceData.symbol}
+                  </p>
+                </div>
+
+                <div className="rounded-full border border-green-400/20 bg-green-400/10 px-4 py-2 text-sm text-green-200">
+                  Live data
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {balanceData.balances.map((balance) => (
+                  <div
+                    key={balance.chain}
+                    className="rounded-xl border border-white/10 bg-black/40 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-bold">{balance.chain}</p>
+                      <p
+                        className={`text-sm ${
+                          balance.status === "success"
+                            ? "text-green-200"
+                            : "text-red-200"
+                        }`}
+                      >
+                        {balance.status}
+                      </p>
+                    </div>
+
+                    <p className="mt-3 text-2xl font-bold text-orange-100">
+                      {balance.formatted} {balance.symbol}
+                    </p>
+
+                    {balance.error && (
+                      <p className="mt-2 text-sm text-red-200">{balance.error}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
