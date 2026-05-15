@@ -73,6 +73,19 @@ export default function Home() {
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
   const canLoadRealBalance = validation.isValid && validation.type === "evm";
 
+  const realBalanceText = balanceData
+    ? `${balanceData.total.formatted} ${balanceData.symbol}`
+    : null;
+
+  const activeChainsText = balanceData
+    ? balanceData.balances
+      .filter((balance) => balance.raw !== "0")
+      .map((balance) => balance.chain)
+      .join(" / ") || "No KENDU detected"
+    : null;
+
+  const hasRealBalance = balanceData && balanceData.total.raw !== "0";
+
   const profile = useMemo(() => {
     if (!hasWallet || !validation.isValid) return null;
 
@@ -226,7 +239,7 @@ export default function Home() {
             </div>
 
             <div className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/50">
-              Prototype mode
+              Live balance MVP
             </div>
           </div>
 
@@ -328,16 +341,19 @@ export default function Home() {
                 </div>
 
                 <div className="rounded-full bg-black/30 px-4 py-2 text-sm text-orange-100">
-                  Preview result
+                  Live balance + preview streaks
                 </div>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-5">
-                <Stat label="DCA streak" value={`${profile.dcaDays}d`} />
-                <Stat label="No-sell streak" value={`${profile.noSellDays}d`} />
-                <Stat label="KENDU held" value={profile.balance} />
-                <Stat label="Chains" value={profile.chains} />
-                <Stat label="Rank" value={profile.rank} />
+                <Stat label="DCA streak" value="Coming next" />
+                <Stat label="No-sell streak" value="Coming next" />
+                <Stat label="KENDU held" value={realBalanceText || profile.balance} />
+                <Stat label="Chains" value={activeChainsText || profile.chains} />
+                <Stat
+                  label="Rank"
+                  value={hasRealBalance ? "Holder detected" : profile.rank}
+                />
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-5">
@@ -345,10 +361,11 @@ export default function Home() {
                   Holder badge
                 </p>
                 <p className="mt-2 text-2xl font-bold text-orange-200">
-                  {profile.noSellBadge}
+                  {hasRealBalance ? "KENDU Holder" : "Preview holder"}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
-                  This card will later become shareable on X and Telegram.
+                  Balance loading is live for Ethereum and Base. DCA streaks, no-sell badges
+                  and shareable cards are coming next.
                 </p>
               </div>
             </div>
