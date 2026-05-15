@@ -37,12 +37,12 @@ const rankRules = [
 ];
 
 const roadmap = [
-  "Read-only wallet checker",
-  "DCA streak detection",
-  "No-sell streak tracking",
-  "Shareable profile cards",
-  "Multi-chain support: Ethereum, Base, Solana",
-  "Community leaderboard",
+  "Live: Ethereum and Base KENDU balance tracking",
+  "Beta: recent transfer activity scan",
+  "Next: indexed wallet history for faster DCA tracking",
+  "Next: verified DCA streaks and no-sell badges",
+  "Next: shareable holder cards for X and Telegram",
+  "Later: Solana support and community leaderboard",
 ];
 
 type BalanceApiResponse = {
@@ -233,7 +233,7 @@ export default function Home() {
           </div>
 
           <div className="rounded-full border border-orange-300/40 px-4 py-2 text-sm text-orange-200">
-            Read-only MVP
+            Read-only beta
           </div>
         </header>
 
@@ -246,9 +246,9 @@ export default function Home() {
             </h2>
 
             <p className="mt-6 max-w-xl text-lg text-white/70">
-              Kendu Brew Club turns regular KENDU buying and holding into a
-              community challenge with DCA streaks, no-sell status, ranks,
-              badges and shareable holder cards.
+              A read-only community tool for KENDU holders. Track your public
+              wallet balance, preview your holder profile and build toward future
+              DCA streaks, no-sell badges and shareable status cards.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -270,9 +270,9 @@ export default function Home() {
             <div className="mt-8 rounded-2xl border border-green-400/20 bg-green-400/10 p-5">
               <p className="font-bold text-green-200">Safe by design</p>
               <p className="mt-2 text-sm text-white/65">
-                No wallet connection required. No seed phrase. No token
-                approvals. No transactions. The first version only uses public
-                wallet addresses.
+                No wallet connection required. No seed phrase. No token approvals. No
+                transactions. Kendu Brew Club only reads public blockchain data from
+                the wallet address you enter.
               </p>
             </div>
           </div>
@@ -312,13 +312,14 @@ export default function Home() {
             <div>
               <h3 className="text-2xl font-bold">Wallet checker</h3>
               <p className="mt-2 text-white/60">
-                Paste a public EVM wallet address to load real KENDU balances from Ethereum and Base. 
-                Solana, DCA streaks and no-sell tracking are coming next.
+                Paste a public EVM wallet address to load real KENDU balances from
+                Ethereum and Base. No wallet connection is needed. Solana support,
+                verified DCA streaks and no-sell tracking are planned next.
               </p>
             </div>
 
             <div className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/50">
-              Live balance MVP
+              Live balance beta
             </div>
           </div>
 
@@ -419,11 +420,12 @@ export default function Home() {
                     Recent activity beta
                   </p>
                   <h4 className="mt-2 text-xl font-bold">
-                    Scan recent KENDU inflows and outflows
+                    Scan recent KENDU transfer activity
                   </h4>
                   <p className="mt-2 text-sm text-white/60">
-                    This uses recent transfer-based detection. It may take a few seconds
-                    and does not yet verify final DEX buys.
+                    This beta scan checks recent KENDU transfers in a limited block range.
+                    It may take a few seconds and should not be treated as verified DCA
+                    history yet.
                   </p>
                 </div>
 
@@ -505,8 +507,9 @@ export default function Home() {
                     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                       <p className="font-bold text-white">No recent KENDU activity found</p>
                       <p className="mt-2 text-sm text-white/60">
-                        No KENDU inflows or outflows were found in the currently scanned
-                        block range. Full DCA history will require an indexed data source.
+                        No recent KENDU transfers were found in the scanned block range.
+                        This does not mean the wallet never bought KENDU — full DCA history
+                        will require an indexed data source.
                       </p>
                     </div>
                   ) : (
@@ -566,7 +569,7 @@ export default function Home() {
                 </div>
 
                 <div className="rounded-full bg-black/30 px-4 py-2 text-sm text-orange-100">
-                  Live balance + preview streaks
+                  Live balance + future streak preview
                 </div>
               </div>
 
@@ -589,8 +592,8 @@ export default function Home() {
                   {hasRealBalance ? "KENDU Holder" : "Preview holder"}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
-                  Balance loading is live for Ethereum and Base. DCA streaks, no-sell badges
-                  and shareable cards are coming next.
+                  Ethereum and Base balance tracking is live. Verified DCA streaks,
+                  no-sell badges, share cards and leaderboard features are planned next.
                 </p>
               </div>
             </div>
@@ -664,8 +667,9 @@ export default function Home() {
         </section>
 
         <footer className="border-t border-white/10 py-8 text-center text-sm text-white/40">
-          Kendu Brew Club is an unofficial community MVP. Built for read-only
-          KENDU holder tracking, DCA culture and community status.
+          Kendu Brew Club is an unofficial read-only community tool for KENDU
+          holders. It does not ask for wallet approvals, transactions, seed
+          phrases or private keys. Not financial advice.
         </footer>
       </section>
     </main>
