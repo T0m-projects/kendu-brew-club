@@ -62,12 +62,61 @@ type BalanceApiResponse = {
   };
 };
 
+type ActivityApiResponse = {
+  wallet: string;
+  note: string;
+  summary: {
+    possibleDcaDays: number;
+    outflowDays: number;
+    recentEvents: number;
+  };
+  chains: {
+    chain: string;
+    status: string;
+    latestBlock?: string;
+    scannedFromBlock?: string;
+    scannedToBlock?: string;
+    inflowCount?: number;
+    outflowCount?: number;
+    possibleDcaDays?: number;
+    error?: string;
+    events: {
+      chain: string;
+      type: "inflow" | "outflow";
+      amount: string;
+      raw: string;
+      txHash: string;
+      blockNumber: string;
+      date: string;
+      timestamp: number;
+      explorerUrl: string;
+    }[];
+  }[];
+  events: {
+    chain: string;
+    type: "inflow" | "outflow";
+    amount: string;
+    raw: string;
+    txHash: string;
+    blockNumber: string;
+    date: string;
+    timestamp: number;
+    explorerUrl: string;
+  }[];
+};
+
 export default function Home() {
   const [wallet, setWallet] = useState("");
 
   const [balanceData, setBalanceData] = useState<BalanceApiResponse | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState("");
+
+  const [activityData, setActivityData] = useState<ActivityApiResponse | null>(
+    null
+  );
+  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
+  const [activityError, setActivityError] = useState("");
 
   const hasWallet = wallet.trim().length > 0;
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
@@ -137,6 +186,36 @@ export default function Home() {
       }
     } finally {
       setIsLoadingBalance(false);
+    }
+  }
+
+  async function loadRecentActivity() {
+    if (!canLoadRealBalance) return;
+
+    setIsLoadingActivity(true);
+    setActivityError("");
+    setActivityData(null);
+
+    try {
+      const response = await fetch(
+        `/api/activity?wallet=${encodeURIComponent(wallet.trim())}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load recent activity.");
+      }
+
+      setActivityData(data);
+    } catch (error) {
+      if (error instanceof Error) {
+        setActivityError(error.message);
+      } else {
+        setActivityError("Failed to load recent activity.");
+      }
+    } finally {
+      setIsLoadingActivity(false);
     }
   }
 
@@ -250,6 +329,8 @@ export default function Home() {
                 setWallet(e.target.value);
                 setBalanceData(null);
                 setBalanceError("");
+                setActivityData(null);
+                setActivityError("");
               }}
               placeholder="Paste ETH / Base / Solana wallet address"
               className="flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-orange-300"
@@ -327,6 +408,150 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {balanceData && (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/40">
+                    Recent activity beta
+                  </p>
+                  <h4 className="mt-2 text-xl font-bold">
+                    Scan recent KENDU inflows and outflows
+                  </h4>
+                  <p className="mt-2 text-sm text-white/60">
+                    This uses recent transfer-based detection. It may take a few seconds
+                    and does not yet verify final DEX buys.
+                  </p>
+                </div>
+
+                <button
+                  onClick={loadRecentActivity}
+                  disabled={!canLoadRealBalance || isLoadingActivity}
+                  className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {isLoadingActivity ? "Scanning..." : "Scan recent activity beta"}
+                </button>
+              </div>
+
+              {activityError && (
+                <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-4">
+                  <p className="font-bold text-red-200">Activity scan failed</p>
+                  <p className="mt-1 text-sm text-white/60">{activityError}</p>
+                </div>
+              )}
+
+              {activityData && (
+                <div className="mt-5 space-y-5">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Stat
+                      label="Possible DCA days"
+                      value={String(activityData.summary.possibleDcaDays)}
+                    />
+                    <Stat
+                      label="Outflow days"
+                      value={String(activityData.summary.outflowDays)}
+                    />
+                    <Stat
+                      label="Recent events"
+                      value={String(activityData.summary.recentEvents)}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {activityData.chains.map((chain) => (
+                      <div
+                        key={chain.chain}
+                        className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-bold">{chain.chain}</p>
+                          <p
+                            className={`text-sm ${
+                              chain.status === "success"
+                                ? "text-green-200"
+                                : "text-red-200"
+                            }`}
+                          >
+                            {chain.status}
+                          </p>
+                        </div>
+
+                        {chain.status === "success" ? (
+                          <div className="mt-4 grid grid-cols-3 gap-3">
+                            <Stat
+                              label="Inflows"
+                              value={String(chain.inflowCount ?? 0)}
+                            />
+                            <Stat
+                              label="Outflows"
+                              value={String(chain.outflowCount ?? 0)}
+                            />
+                            <Stat
+                              label="DCA days"
+                              value={String(chain.possibleDcaDays ?? 0)}
+                            />
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-sm text-red-200">{chain.error}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {activityData.events.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                      <p className="font-bold text-white">No recent KENDU activity found</p>
+                      <p className="mt-2 text-sm text-white/60">
+                        No KENDU inflows or outflows were found in the currently scanned
+                        block range. Full DCA history will require an indexed data source.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                      <p className="font-bold">Latest KENDU activity</p>
+
+                      <div className="mt-4 space-y-3">
+                        {activityData.events.slice(0, 8).map((event) => (
+                          <a
+                            key={`${event.txHash}-${event.blockNumber}-${event.type}`}
+                            href={event.explorerUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block rounded-xl border border-white/10 bg-black/40 p-4 transition hover:border-orange-300/40"
+                          >
+                            <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
+                              <div>
+                                <p
+                                  className={`font-bold ${
+                                    event.type === "inflow"
+                                      ? "text-green-200"
+                                      : "text-red-200"
+                                  }`}
+                                >
+                                  {event.type === "inflow" ? "Inflow" : "Outflow"} ·{" "}
+                                  {event.chain}
+                                </p>
+                                <p className="mt-1 text-sm text-white/50">
+                                  {event.date}
+                                </p>
+                              </div>
+
+                              <p className="text-lg font-bold text-orange-100">
+                                {event.amount} KENDU
+                              </p>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-white/40">{activityData.note}</p>
+                </div>
+              )}
             </div>
           )}
 
