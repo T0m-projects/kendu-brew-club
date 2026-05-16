@@ -432,6 +432,12 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
             <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
               <h3 className="text-xl font-bold">Latest KENDU activity</h3>
 
+              <p className="mt-2 text-xs text-white/40">
+                Showing latest 8 events only. Scores above are calculated from the indexed
+                transfer history returned by the explorer APIs, not only from the events shown
+                here.
+              </p>
+
               {activityData.events.length === 0 ? (
                 <p className="mt-3 text-white/60">
                   No recent KENDU transfer activity found.

@@ -759,6 +759,12 @@ ${shareProfileUrl}`
                     <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                       <p className="font-bold">Latest KENDU activity</p>
 
+                      <p className="mt-2 text-xs text-white/40">
+                        Showing latest 8 events only. Scores above are calculated from the indexed
+                        transfer history returned by the explorer APIs, not only from the events shown
+                        here.
+                      </p>
+
                       <div className="mt-4 space-y-3">
                         {activityData.events.slice(0, 8).map((event, index) => (
                           <a
