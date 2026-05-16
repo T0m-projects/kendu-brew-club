@@ -24,35 +24,52 @@ export async function generateMetadata({
       ? "Shared read-only KENDU holder profile with Ethereum/Base balance and transfer-based activity data. No wallet connection. No approvals. No transactions."
       : "A read-only community tool for KENDU holders. No wallet connection. No approvals. No transactions.";
 
-  const imageUrl = `/share/${encodeURIComponent(
-    decodedWallet
-  )}/opengraph-image?og=2`;
+  const siteUrl = process.env.SITE_URL || "http://localhost:3000";
+  const encodedWallet = encodeURIComponent(decodedWallet);
 
-  return {
-    metadataBase: new URL(process.env.SITE_URL || "http://localhost:3000"),
-    title,
-    description,
+  const pageUrl = `${siteUrl}/share/${encodedWallet}`;
+  const imageUrl = `${siteUrl}/share/${encodedWallet}/opengraph-image?og=3`;
+
+return {
+  metadataBase: new URL(siteUrl),
+  title,
+  description,
+  alternates: {
+    canonical: pageUrl,
+  },
     openGraph: {
       title,
       description,
       type: "website",
-      siteName: "KENDU Brew Club",
+      siteName: "Kendu Brew Club",
+      url: pageUrl,
       images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: "KENDU Brew Club shared holder profile",
-        },
-      ],
+      {
+        url: imageUrl,
+        secureUrl: imageUrl,
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "Kendu Brew Club shared holder profile",
+      },
+    ],
+},
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [
+    {
+        url: imageUrl,
+        secureUrl: imageUrl,
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "Kendu Brew Club shared holder profile",
     },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [imageUrl],
-    },
-  };
+    ],
+  },
+};
 }
 
 export default async function SharePage({ params }: SharePageProps) {
