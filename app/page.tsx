@@ -196,7 +196,7 @@ ${shareProfileUrl}`
     : "#";
 
   const telegramProfileShareUrl = shareProfileUrl
-    ? `https://t.me/share/url?url=${encodeURIComponent(
+    ? `tg://msg_url?url=${encodeURIComponent(
         shareProfileUrl
       )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`
     : "#";

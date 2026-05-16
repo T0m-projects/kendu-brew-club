@@ -153,7 +153,7 @@ ${shareUrl}`;
     tweetText
   )}`;
 
-  const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+  const telegramShareUrl = `tg://msg_url?url=${encodeURIComponent(
     shareUrl
   )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`;
 
