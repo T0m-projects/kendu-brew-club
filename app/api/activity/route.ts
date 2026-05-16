@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatUnits, isAddress, type Address } from "viem";
 import { KENDU_CONTRACTS } from "../../../lib/contracts";
 
-type EtherscanTokenTransfer = {
+type ExplorerTokenTransfer = {
   blockNumber: string;
   timeStamp: string;
   hash: string;
-  nonce: string;
-  blockHash: string;
   from: string;
   contractAddress: string;
   to: string;
@@ -15,19 +13,12 @@ type EtherscanTokenTransfer = {
   tokenName: string;
   tokenSymbol: string;
   tokenDecimal: string;
-  transactionIndex: string;
-  gas: string;
-  gasPrice: string;
-  gasUsed: string;
-  cumulativeGasUsed: string;
-  input: string;
-  confirmations: string;
 };
 
-type EtherscanResponse = {
+type ExplorerResponse = {
   status: string;
   message: string;
-  result: EtherscanTokenTransfer[] | string;
+  result: ExplorerTokenTransfer[] | string;
 };
 
 type KenduActivityEvent = {
@@ -43,17 +34,19 @@ type KenduActivityEvent = {
 };
 
 const ETHERSCAN_API_URL = "https://api.etherscan.io/v2/api";
+const BASE_BLOCKSCOUT_API_URL = "https://base.blockscout.com/api";
 
 const CHAINS = [
   {
     chain: "Ethereum",
+    source: "etherscan",
     chainId: "1",
     tokenAddress: KENDU_CONTRACTS.ethereum.address,
     explorerTxBaseUrl: "https://etherscan.io/tx/",
   },
   {
     chain: "Base",
-    chainId: "8453",
+    source: "blockscout",
     tokenAddress: KENDU_CONTRACTS.base.address,
     explorerTxBaseUrl: "https://basescan.org/tx/",
   },
@@ -81,16 +74,25 @@ export async function GET(request: NextRequest) {
   const walletAddress = wallet as Address;
 
   const chainResults = await Promise.allSettled(
-    CHAINS.map((chain) =>
-      getChainTokenTransfers({
+    CHAINS.map((chain) => {
+      if (chain.source === "etherscan") {
+        return getEtherscanTokenTransfers({
+          chainName: chain.chain,
+          chainId: chain.chainId,
+          tokenAddress: chain.tokenAddress,
+          walletAddress,
+          explorerTxBaseUrl: chain.explorerTxBaseUrl,
+          apiKey,
+        });
+      }
+
+      return getBlockscoutTokenTransfers({
         chainName: chain.chain,
-        chainId: chain.chainId,
         tokenAddress: chain.tokenAddress,
         walletAddress,
         explorerTxBaseUrl: chain.explorerTxBaseUrl,
-        apiKey,
-      })
-    )
+      });
+    })
   );
 
   const chains = chainResults.map((result, index) => {
@@ -100,11 +102,15 @@ export async function GET(request: NextRequest) {
       const events = result.value.events;
 
       const possibleDcaDays = new Set(
-        events.filter((event) => event.type === "inflow").map((event) => event.date)
+        events
+          .filter((event) => event.type === "inflow")
+          .map((event) => event.date)
       ).size;
 
       const outflowDays = new Set(
-        events.filter((event) => event.type === "outflow").map((event) => event.date)
+        events
+          .filter((event) => event.type === "outflow")
+          .map((event) => event.date)
       ).size;
 
       return {
@@ -135,17 +141,21 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => b.timestamp - a.timestamp);
 
   const possibleDcaDays = new Set(
-    allEvents.filter((event) => event.type === "inflow").map((event) => event.date)
+    allEvents
+      .filter((event) => event.type === "inflow")
+      .map((event) => event.date)
   ).size;
 
   const outflowDays = new Set(
-    allEvents.filter((event) => event.type === "outflow").map((event) => event.date)
+    allEvents
+      .filter((event) => event.type === "outflow")
+      .map((event) => event.date)
   ).size;
 
   return NextResponse.json({
     wallet,
     note:
-      "This uses Etherscan token transfer history. It detects KENDU inflows and outflows, but does not yet fully verify whether each inflow was a DEX buy.",
+      "This uses token transfer history. It detects KENDU inflows and outflows, but does not yet fully verify whether each inflow was a DEX buy.",
     summary: {
       possibleDcaDays,
       outflowDays,
@@ -156,7 +166,7 @@ export async function GET(request: NextRequest) {
   });
 }
 
-async function getChainTokenTransfers({
+async function getEtherscanTokenTransfers({
   chainName,
   chainId,
   tokenAddress,
@@ -183,8 +193,55 @@ async function getChainTokenTransfers({
   url.searchParams.set("sort", "desc");
   url.searchParams.set("apikey", apiKey);
 
+  const data = await fetchExplorerData(url, chainName);
+
+  return {
+    chain: chainName,
+    events: normalizeTokenTransfers({
+      chainName,
+      walletAddress,
+      explorerTxBaseUrl,
+      transfers: data,
+    }),
+  };
+}
+
+async function getBlockscoutTokenTransfers({
+  chainName,
+  tokenAddress,
+  walletAddress,
+  explorerTxBaseUrl,
+}: {
+  chainName: string;
+  tokenAddress: Address;
+  walletAddress: Address;
+  explorerTxBaseUrl: string;
+}) {
+  const url = new URL(BASE_BLOCKSCOUT_API_URL);
+
+  url.searchParams.set("module", "account");
+  url.searchParams.set("action", "tokentx");
+  url.searchParams.set("contractaddress", tokenAddress);
+  url.searchParams.set("address", walletAddress);
+  url.searchParams.set("page", "1");
+  url.searchParams.set("offset", "100");
+  url.searchParams.set("sort", "desc");
+
+  const data = await fetchExplorerData(url, chainName);
+
+  return {
+    chain: chainName,
+    events: normalizeTokenTransfers({
+      chainName,
+      walletAddress,
+      explorerTxBaseUrl,
+      transfers: data,
+    }),
+  };
+}
+
+async function fetchExplorerData(url: URL, chainName: string) {
   const response = await fetch(url.toString(), {
-    // Avoid caching sensitive/user-specific API responses.
     cache: "no-store",
   });
 
@@ -192,20 +249,17 @@ async function getChainTokenTransfers({
     throw new Error(`${chainName} API request failed with ${response.status}.`);
   }
 
-  const data = (await response.json()) as EtherscanResponse;
+  const data = (await response.json()) as ExplorerResponse;
 
   if (data.status === "0") {
-    const message = typeof data.result === "string" ? data.result : data.message;
+    const message =
+      typeof data.result === "string" ? data.result : data.message;
 
-    // Etherscan returns status 0 for "No transactions found".
     if (
       message.toLowerCase().includes("no transactions") ||
       data.message.toLowerCase().includes("no transactions")
     ) {
-      return {
-        chain: chainName,
-        events: [] as KenduActivityEvent[],
-      };
+      return [] as ExplorerTokenTransfer[];
     }
 
     throw new Error(`${chainName}: ${message}`);
@@ -215,9 +269,23 @@ async function getChainTokenTransfers({
     throw new Error(`${chainName}: Unexpected API response.`);
   }
 
+  return data.result;
+}
+
+function normalizeTokenTransfers({
+  chainName,
+  walletAddress,
+  explorerTxBaseUrl,
+  transfers,
+}: {
+  chainName: string;
+  walletAddress: Address;
+  explorerTxBaseUrl: string;
+  transfers: ExplorerTokenTransfer[];
+}) {
   const walletLower = walletAddress.toLowerCase();
 
-  const events: KenduActivityEvent[] = data.result.map((tx) => {
+  return transfers.map((tx) => {
     const from = tx.from.toLowerCase();
     const to = tx.to.toLowerCase();
 
@@ -240,11 +308,6 @@ async function getChainTokenTransfers({
       explorerUrl: `${explorerTxBaseUrl}${tx.hash}`,
     };
   });
-
-  return {
-    chain: chainName,
-    events,
-  };
 }
 
 function formatKenduAmount(raw: bigint, decimals: number) {
