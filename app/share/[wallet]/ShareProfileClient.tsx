@@ -334,6 +334,45 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
               </div>
             </section>
 
+            <section className="mt-6 rounded-3xl border border-orange-300/20 bg-white/[0.03] p-5">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
+                    Quick share actions
+                  </p>
+                  <p className="mt-2 text-sm text-white/60">
+                    Open or download the generated profile image and share it manually if a
+                    platform preview does not load correctly.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <a
+                    href={shareImageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-orange-300/40 px-5 py-3 text-center font-bold text-orange-200 transition hover:bg-orange-300/10"
+                  >
+                    Open image
+                  </a>
+
+                  <button
+                    onClick={downloadShareImage}
+                    className="rounded-xl bg-orange-300 px-5 py-3 font-bold text-black transition hover:bg-orange-200"
+                  >
+                    {downloadStatus || "Download PNG"}
+                  </button>
+
+                  <button
+                    onClick={copyShareLink}
+                    className="rounded-xl border border-white/15 px-5 py-3 font-bold transition hover:bg-white/10"
+                  >
+                    {copyStatus || "Copy link"}
+                  </button>
+                </div>
+              </div>
+            </section>
+
             <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
