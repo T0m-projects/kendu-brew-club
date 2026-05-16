@@ -72,6 +72,39 @@ const calculationNotes = [
   },
 ];
 
+const badgeRules = [
+  {
+    name: "KENDU Holder",
+    rule: "Default holder profile",
+    description:
+      "Shown when a wallet has KENDU balance, but no transfer-based DCA activity has been scanned or detected yet.",
+  },
+  {
+    name: "KENDU Stacker",
+    rule: "1+ possible DCA day",
+    description:
+      "The wallet received KENDU on at least one unique day.",
+  },
+  {
+    name: "Double Shot Holder",
+    rule: "7+ possible DCA days",
+    description:
+      "The wallet received KENDU across at least seven unique days.",
+  },
+  {
+    name: "Cappuccino Chad",
+    rule: "14+ possible DCA days and max 2 outflow days",
+    description:
+      "The wallet shows stronger accumulation behavior with limited outgoing KENDU activity.",
+  },
+  {
+    name: "Diamond Brewer",
+    rule: "30+ possible DCA days and 0 outflow days",
+    description:
+      "The wallet shows long-term accumulation behavior with no detected outgoing KENDU transfer days.",
+  },
+];
+
 type BalanceApiResponse = {
   wallet: string;
   symbol: string;
@@ -969,6 +1002,48 @@ ${shareProfileUrl}`
                   <p className="mt-2 text-sm text-white/60">{note.text}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-12">
+          <div className="rounded-3xl border border-orange-300/20 bg-orange-300/10 p-6 md:p-8">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
+                How badges work
+              </p>
+              <h3 className="mt-3 text-2xl font-bold">
+                Badge rules are based on transfer activity.
+              </h3>
+              <p className="mt-3 max-w-3xl text-sm text-white/60">
+                Badges are currently based on possible DCA days and outflow days. These
+                rules are beta and may change based on community feedback.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {badgeRules.map((badge) => (
+                <div
+                  key={badge.name}
+                  className="rounded-2xl border border-white/10 bg-black/30 p-5"
+                >
+                  <p className="text-lg font-bold text-orange-200">{badge.name}</p>
+                  <p className="mt-2 text-sm font-bold text-white">
+                    {badge.rule}
+                  </p>
+                  <p className="mt-2 text-sm text-white/60">
+                    {badge.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-5">
+              <p className="font-bold text-yellow-200">Beta note</p>
+              <p className="mt-2 text-sm text-white/60">
+                These badges do not yet prove verified DEX buys. They use token transfer
+                history as a first version of holder behavior scoring.
+              </p>
             </div>
           </div>
         </section>
