@@ -215,7 +215,13 @@ ${shareProfileUrl}`
     : "#";
 
   async function loadRealBalance() {
-    if (!canLoadRealBalance) return;
+    const walletAddress = wallet.trim();
+    const currentValidation = validateWalletAddress(walletAddress);
+
+    if (!currentValidation.isValid || currentValidation.type !== "evm") {
+      setBalanceError("Paste a valid Ethereum/Base wallet address first.");
+      return;
+    }
 
     setIsLoadingBalance(true);
     setBalanceError("");
@@ -225,7 +231,7 @@ ${shareProfileUrl}`
 
     try {
       const response = await fetch(
-        `/api/balance?wallet=${encodeURIComponent(wallet.trim())}`
+        `/api/balance?wallet=${encodeURIComponent(walletAddress)}`
       );
 
       const data = await response.json();
@@ -235,27 +241,31 @@ ${shareProfileUrl}`
       }
 
       setBalanceData(data);
+
+      // Let the balance appear first.
+      setIsLoadingBalance(false);
+
+      // Then automatically load activity.
+      void loadRecentActivityForWallet(walletAddress);
     } catch (error) {
       if (error instanceof Error) {
         setBalanceError(error.message);
       } else {
         setBalanceError("Failed to load balance.");
       }
-    } finally {
+
       setIsLoadingBalance(false);
     }
   }
 
-  async function loadRecentActivity() {
-    if (!canLoadRealBalance) return;
-
+  async function loadRecentActivityForWallet(walletAddress: string) {
     setIsLoadingActivity(true);
     setActivityError("");
     setActivityData(null);
 
     try {
       const response = await fetch(
-        `/api/activity?wallet=${encodeURIComponent(wallet.trim())}`
+        `/api/activity?wallet=${encodeURIComponent(walletAddress)}`
       );
 
       const data = await response.json();
@@ -274,6 +284,18 @@ ${shareProfileUrl}`
     } finally {
       setIsLoadingActivity(false);
     }
+  }
+
+  async function loadRecentActivity() {
+    const walletAddress = wallet.trim();
+    const currentValidation = validateWalletAddress(walletAddress);
+
+    if (!currentValidation.isValid || currentValidation.type !== "evm") {
+      setActivityError("Paste a valid Ethereum/Base wallet address first.");
+      return;
+    }
+
+    await loadRecentActivityForWallet(walletAddress);
   }
 
   async function copyShareProfileLink() {
@@ -568,7 +590,7 @@ ${shareProfileUrl}`
                     Recent activity beta
                   </p>
                   <h4 className="mt-2 text-xl font-bold">
-                    Scan recent KENDU transfer activity
+                    Recent KENDU transfer activity
                   </h4>
                   <p className="mt-2 text-sm text-white/60">
                     This beta scan uses token transfer history to detect KENDU
@@ -583,9 +605,11 @@ ${shareProfileUrl}`
                   disabled={isActivityButtonDisabled}
                   className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {isLoadingActivity
-                    ? "Scanning..."
-                    : "Scan recent activity beta"}
+              {isLoadingActivity
+                ? "Scanning..."
+                : activityData
+                  ? "Refresh activity"
+                  : "Scan activity"}
                 </button>
               </div>
 
