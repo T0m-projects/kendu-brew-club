@@ -27,7 +27,7 @@ export async function generateMetadata({
   const imageUrl = `/share/${encodeURIComponent(decodedWallet)}/opengraph-image`;
 
   return {
-    metadataBase: new URL("https://kendu-brew-club.vercel.app"),
+    metadataBase: new URL(process.env.SITE_URL || "http://localhost:3000"),
     title,
     description,
     openGraph: {
