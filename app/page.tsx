@@ -195,7 +195,13 @@ ${shareProfileUrl}`
       )}`
     : "#";
 
-  const telegramProfileShareUrl = shareProfileUrl
+  const telegramWebProfileShareUrl = shareProfileUrl
+    ? `https://t.me/share/url?url=${encodeURIComponent(
+        shareProfileUrl
+      )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`
+    : "#";
+
+  const telegramAppProfileShareUrl = shareProfileUrl
     ? `tg://msg_url?url=${encodeURIComponent(
         shareProfileUrl
       )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`
@@ -769,12 +775,19 @@ ${shareProfileUrl}`
                   </a>
 
                   <a
-                    href={telegramProfileShareUrl}
+                    href={telegramWebProfileShareUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
                   >
-                    Telegram
+                    Telegram Web
+                  </a>
+
+                  <a
+                    href={telegramAppProfileShareUrl}
+                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                  >
+                    Telegram App
                   </a>
                 </div>
               </div>

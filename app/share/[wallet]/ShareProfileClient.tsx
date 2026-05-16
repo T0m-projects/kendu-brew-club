@@ -153,7 +153,11 @@ ${shareUrl}`;
     tweetText
   )}`;
 
-  const telegramShareUrl = `tg://msg_url?url=${encodeURIComponent(
+  const telegramWebShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+    shareUrl
+  )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`;
+
+  const telegramAppShareUrl = `tg://msg_url?url=${encodeURIComponent(
     shareUrl
   )}&text=${encodeURIComponent("☕ Check my KENDU Brew Club profile")}`;
 
@@ -311,12 +315,19 @@ ${shareUrl}`;
                   </a>
 
                   <a
-                    href={telegramShareUrl}
+                    href={telegramWebShareUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
                   >
-                    Share on Telegram
+                    Telegram Web
+                  </a>
+
+                  <a
+                    href={telegramAppShareUrl}
+                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                  >
+                    Telegram App
                   </a>
                 </div>
               </div>
