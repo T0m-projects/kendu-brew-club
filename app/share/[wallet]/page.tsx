@@ -1,11 +1,53 @@
+import type { Metadata } from "next";
+import { validateWalletAddress } from "../../../lib/wallet";
 import { ShareProfileClient } from "./ShareProfileClient";
 
-export default async function SharePage({
-  params,
-}: {
+type SharePageProps = {
   params: Promise<{ wallet: string }>;
-}) {
+};
+
+export async function generateMetadata({
+  params,
+}: SharePageProps): Promise<Metadata> {
+  const { wallet } = await params;
+  const decodedWallet = decodeURIComponent(wallet);
+  const validation = validateWalletAddress(decodedWallet);
+  const shortWallet = shortenWallet(decodedWallet);
+
+  const title =
+    validation.isValid && validation.type === "evm"
+      ? `${shortWallet} · KENDU Brew Club`
+      : "KENDU Brew Club";
+
+  const description =
+    validation.isValid && validation.type === "evm"
+      ? "Shared read-only KENDU holder profile with Ethereum/Base balance and transfer-based activity data. No wallet connection. No approvals. No transactions."
+      : "A read-only community tool for KENDU holders. No wallet connection. No approvals. No transactions.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "KENDU Brew Club",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
+
+export default async function SharePage({ params }: SharePageProps) {
   const { wallet } = await params;
 
   return <ShareProfileClient wallet={decodeURIComponent(wallet)} />;
+}
+
+function shortenWallet(wallet: string) {
+  if (wallet.length <= 14) return wallet;
+  return `${wallet.slice(0, 6)}...${wallet.slice(-6)}`;
 }
