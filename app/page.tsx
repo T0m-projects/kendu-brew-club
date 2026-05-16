@@ -110,6 +110,7 @@ export default function Home() {
   const [activityError, setActivityError] = useState("");
 
   const [shareLinkCopyStatus, setShareLinkCopyStatus] = useState("");
+  const [shareImageDownloadStatus, setShareImageDownloadStatus] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -120,11 +121,10 @@ export default function Home() {
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
   const canLoadRealBalance = validation.isValid && validation.type === "evm";
 
-  const isBalanceButtonDisabled =
-    !isMounted || !canLoadRealBalance || isLoadingBalance;
+  const isBalanceButtonDisabled = !canLoadRealBalance || isLoadingBalance;
 
   const isActivityButtonDisabled =
-    !isMounted || !canLoadRealBalance || isLoadingActivity || !balanceData;
+    !canLoadRealBalance || isLoadingActivity || !balanceData;
 
   const profile = useMemo(() => {
     if (!hasWallet || !validation.isValid) return null;
@@ -181,6 +181,13 @@ export default function Home() {
   const shareProfileUrl =
     isMounted && canLoadRealBalance
       ? `${window.location.origin}/share/${encodeURIComponent(wallet.trim())}`
+      : "";
+
+  const shareProfileImageUrl =
+    isMounted && canLoadRealBalance
+      ? `${window.location.origin}/share/${encodeURIComponent(
+          wallet.trim()
+        )}/opengraph-image?download=1`
       : "";
 
   const shareProfileText = shareProfileUrl
@@ -284,6 +291,48 @@ ${shareProfileUrl}`
 
       window.setTimeout(() => {
         setShareLinkCopyStatus("");
+      }, 2000);
+    }
+  }
+
+  async function downloadShareProfileImage() {
+    if (!shareProfileImageUrl) return;
+
+    setShareImageDownloadStatus("Preparing...");
+
+    try {
+      const response = await fetch(shareProfileImageUrl);
+
+      if (!response.ok) {
+        throw new Error("Failed to download image.");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `kendu-brew-profile-${shortenWallet(wallet).replace(
+        "...",
+        "-"
+      )}.png`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(objectUrl);
+
+      setShareImageDownloadStatus("Downloaded!");
+
+      window.setTimeout(() => {
+        setShareImageDownloadStatus("");
+      }, 2000);
+    } catch {
+      setShareImageDownloadStatus("Download failed");
+
+      window.setTimeout(() => {
+        setShareImageDownloadStatus("");
       }, 2000);
     }
   }
@@ -403,6 +452,7 @@ ${shareProfileUrl}`
                 setActivityData(null);
                 setActivityError("");
                 setShareLinkCopyStatus("");
+                setShareImageDownloadStatus("");
               }}
               autoComplete="off"
               spellCheck={false}
@@ -734,61 +784,101 @@ ${shareProfileUrl}`
 
           {balanceData && shareProfileUrl && (
             <div className="mt-6 rounded-3xl border border-orange-300/20 bg-white/[0.03] p-6">
-              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
-                    Share profile
+              <div>
+                <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
+                  Share profile
+                </p>
+                <h3 className="mt-2 text-2xl font-bold">
+                  Create a shareable KENDU Brew profile
+                </h3>
+                <p className="mt-2 max-w-2xl text-sm text-white/60">
+                  Share a public profile page or download the generated profile image for
+                  X and Telegram.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/40">
+                    Profile link
                   </p>
-                  <h3 className="mt-2 text-2xl font-bold">
-                    Create a shareable KENDU Brew profile
-                  </h3>
-                  <p className="mt-2 text-sm text-white/60">
-                    Share a public profile page with live Ethereum/Base balance
-                    and transfer-based activity data.
-                  </p>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <button
+                      onClick={copyShareProfileLink}
+                      className="rounded-xl bg-orange-300 px-5 py-3 font-bold text-black transition hover:bg-orange-200"
+                    >
+                      {shareLinkCopyStatus || "Copy link"}
+                    </button>
+
+                    <a
+                      href={shareProfileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                    >
+                      Open profile
+                    </a>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <button
-                    onClick={copyShareProfileLink}
-                    className="rounded-xl bg-orange-300 px-5 py-3 font-bold text-black transition hover:bg-orange-200"
-                  >
-                    {shareLinkCopyStatus || "Copy link"}
-                  </button>
+                <div className="rounded-2xl border border-orange-300/20 bg-orange-300/5 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-orange-300">
+                    Image card
+                  </p>
 
-                  <a
-                    href={shareProfileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
-                  >
-                    Open profile
-                  </a>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <a
+                      href={shareProfileImageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-orange-300/40 px-5 py-3 text-center font-bold text-orange-200 transition hover:bg-orange-300/10"
+                    >
+                      Open image
+                    </a>
 
-                  <a
-                    href={xProfileShareUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
-                  >
-                    Share on X
-                  </a>
+                    <button
+                      onClick={downloadShareProfileImage}
+                      className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10"
+                    >
+                      {shareImageDownloadStatus || "Download PNG"}
+                    </button>
+                  </div>
+                </div>
 
-                  <a
-                    href={telegramWebProfileShareUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
-                  >
-                    Telegram Web
-                  </a>
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/40">
+                    Social share
+                  </p>
 
-                  <a
-                    href={telegramAppProfileShareUrl}
-                    className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
-                  >
-                    Telegram App
-                  </a>
+                  <div className="mt-4 grid gap-3">
+                    <a
+                      href={xProfileShareUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                    >
+                      Share on X
+                    </a>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <a
+                        href={telegramWebProfileShareUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                      >
+                        Telegram Web
+                      </a>
+
+                      <a
+                        href={telegramAppProfileShareUrl}
+                        className="rounded-xl border border-white/15 px-5 py-3 text-center font-bold transition hover:bg-white/10"
+                      >
+                        Telegram App
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 

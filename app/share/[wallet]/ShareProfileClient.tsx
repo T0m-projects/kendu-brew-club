@@ -391,22 +391,6 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
                   </button>
 
                   <a
-                    href={shareImageUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-xl border border-orange-300/40 px-5 py-3 text-center font-bold text-orange-200 transition hover:bg-orange-300/10"
-                  >
-                    Open image
-                  </a>
-
-                  <button
-                    onClick={downloadShareImage}
-                    className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10"
-                  >
-                    {downloadStatus || "Download PNG"}
-                  </button>
-
-                  <a
                     href={xShareUrl}
                     target="_blank"
                     rel="noreferrer"
