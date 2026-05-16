@@ -24,7 +24,9 @@ export async function generateMetadata({
       ? "Shared read-only KENDU holder profile with Ethereum/Base balance and transfer-based activity data. No wallet connection. No approvals. No transactions."
       : "A read-only community tool for KENDU holders. No wallet connection. No approvals. No transactions.";
 
-  const imageUrl = `/share/${encodeURIComponent(decodedWallet)}/opengraph-image`;
+  const imageUrl = `/share/${encodeURIComponent(
+    decodedWallet
+  )}/opengraph-image?og=2`;
 
   return {
     metadataBase: new URL(process.env.SITE_URL || "http://localhost:3000"),
