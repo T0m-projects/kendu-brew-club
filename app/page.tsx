@@ -45,6 +45,33 @@ const roadmap = [
   "Later: Solana support and community leaderboard",
 ];
 
+const calculationNotes = [
+  {
+    title: "Inflow",
+    text: "An inflow means the wallet received KENDU. It can be a DEX buy, transfer, bridge or another incoming KENDU movement.",
+  },
+  {
+    title: "Outflow",
+    text: "An outflow means the wallet sent KENDU out. It can be a sell, transfer to another wallet, bridge or another outgoing KENDU movement.",
+  },
+  {
+    title: "Possible DCA days",
+    text: "Possible DCA days count unique days when the wallet received KENDU. Multiple inflows on the same day count as one possible DCA day.",
+  },
+  {
+    title: "Outflow days",
+    text: "Outflow days count unique days when the wallet sent KENDU out. This is used to estimate holder behavior, not to prove selling.",
+  },
+  {
+    title: "Recent events",
+    text: "Recent events are the total KENDU transfer events found from Ethereum and Base activity data.",
+  },
+  {
+    title: "Not verified buys yet",
+    text: "This beta uses token transfer history. It does not yet fully verify whether each inflow was a real DEX buy.",
+  },
+];
+
 type BalanceApiResponse = {
   wallet: string;
   symbol: string;
@@ -913,6 +940,37 @@ ${shareProfileUrl}`
               </div>
             </div>
           )}
+        </section>
+
+        <section className="py-12">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
+                How activity is calculated
+              </p>
+              <h3 className="mt-3 text-2xl font-bold">
+                What inflows, outflows and DCA days mean.
+              </h3>
+              <p className="mt-3 max-w-3xl text-sm text-white/60">
+                Kendu Brew Club currently uses token transfer history from Ethereum and
+                Base. These numbers are useful for holder profiles, but they should be
+                treated as transfer-based estimates until verified DEX buy detection is
+                added.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {calculationNotes.map((note) => (
+                <div
+                  key={note.title}
+                  className="rounded-2xl border border-white/10 bg-black/30 p-5"
+                >
+                  <p className="font-bold text-orange-200">{note.title}</p>
+                  <p className="mt-2 text-sm text-white/60">{note.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section id="how-it-works" className="grid gap-4 py-12 md:grid-cols-3">
