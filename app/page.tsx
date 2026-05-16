@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { validateWalletAddress } from "../lib/wallet";
 
 const rankRules = [
@@ -111,6 +111,12 @@ export default function Home() {
   const [balanceData, setBalanceData] = useState<BalanceApiResponse | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState("");
+  
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [activityData, setActivityData] = useState<ActivityApiResponse | null>(
     null
@@ -121,6 +127,12 @@ export default function Home() {
   const hasWallet = wallet.trim().length > 0;
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
   const canLoadRealBalance = validation.isValid && validation.type === "evm";
+  
+  const isBalanceButtonDisabled =
+    !isMounted || !canLoadRealBalance || isLoadingBalance;
+
+  const isActivityButtonDisabled =
+    !isMounted || !canLoadRealBalance || isLoadingActivity || !balanceData;
 
   const realBalanceText = balanceData
     ? `${balanceData.total.formatted} ${balanceData.symbol}`
@@ -333,13 +345,15 @@ export default function Home() {
                 setActivityData(null);
                 setActivityError("");
               }}
+              autoComplete="off"
+              spellCheck={false}
               placeholder="Paste ETH / Base / Solana wallet address"
               className="flex-1 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none placeholder:text-white/30 focus:border-orange-300"
             />
 
             <button
               onClick={loadRealBalance}
-              disabled={!canLoadRealBalance || isLoadingBalance}
+              disabled={isBalanceButtonDisabled}
               className="rounded-xl bg-orange-300 px-6 py-3 font-bold text-black transition hover:bg-orange-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isLoadingBalance ? "Loading..." : "Load real balance"}
@@ -423,15 +437,15 @@ export default function Home() {
                     Scan recent KENDU transfer activity
                   </h4>
                   <p className="mt-2 text-sm text-white/60">
-                    This beta scan checks recent KENDU transfers in a limited block range.
-                    It may take a few seconds and should not be treated as verified DCA
-                    history yet.
+                    This beta scan uses token transfer history to detect KENDU inflows and
+                    outflows. It is faster than the old RPC scan, but it still does not fully
+                    verify whether each inflow was a DEX buy.
                   </p>
                 </div>
 
                 <button
                   onClick={loadRecentActivity}
-                  disabled={!canLoadRealBalance || isLoadingActivity}
+                  disabled={isActivityButtonDisabled}
                   className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {isLoadingActivity ? "Scanning..." : "Scan recent activity beta"}
@@ -517,9 +531,9 @@ export default function Home() {
                       <p className="font-bold">Latest KENDU activity</p>
 
                       <div className="mt-4 space-y-3">
-                        {activityData.events.slice(0, 8).map((event) => (
+                        {activityData.events.slice(0, 8).map((event, index) => (
                           <a
-                            key={`${event.txHash}-${event.blockNumber}-${event.type}`}
+                            key={`${event.txHash}-${event.blockNumber}-${event.type}-${index}`}
                             href={event.explorerUrl}
                             target="_blank"
                             rel="noreferrer"
@@ -574,13 +588,36 @@ export default function Home() {
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-5">
-                <Stat label="DCA streak" value="Coming next" />
-                <Stat label="No-sell streak" value="Coming next" />
+                <Stat
+                  label="Possible DCA days"
+                  value={
+                    activityData
+                      ? String(activityData.summary.possibleDcaDays)
+                      : "Scan activity"
+                  }
+                />
+
+                <Stat
+                  label="Outflow days"
+                  value={
+                    activityData
+                      ? String(activityData.summary.outflowDays)
+                      : "Scan activity"
+                  }
+                />
+
                 <Stat label="KENDU held" value={realBalanceText || profile.balance} />
                 <Stat label="Chains" value={activeChainsText || profile.chains} />
+
                 <Stat
-                  label="Rank"
-                  value={hasRealBalance ? "Holder detected" : profile.rank}
+                  label="Status"
+                  value={
+                    activityData
+                      ? getHolderStatus(activityData.summary.outflowDays)
+                      : hasRealBalance
+                        ? "Holder detected"
+                        : profile.rank
+                  }
                 />
               </div>
 
@@ -589,11 +626,19 @@ export default function Home() {
                   Holder badge
                 </p>
                 <p className="mt-2 text-2xl font-bold text-orange-200">
-                  {hasRealBalance ? "KENDU Holder" : "Preview holder"}
+                  {activityData
+                    ? getHolderBadge(
+                        activityData.summary.possibleDcaDays,
+                        activityData.summary.outflowDays
+                      )
+                    : hasRealBalance
+                      ? "KENDU Holder"
+                      : "Preview holder"}
                 </p>
                 <p className="mt-2 text-sm text-white/60">
-                  Ethereum and Base balance tracking is live. Verified DCA streaks,
-                  no-sell badges, share cards and leaderboard features are planned next.
+                  Balance tracking is live for Ethereum and Base. Activity scan uses token
+                  transfer history to estimate possible DCA days and outflow days. Verified DEX
+                  buy detection, share cards and leaderboard features are planned next.
                 </p>
               </div>
             </div>
@@ -715,4 +760,18 @@ function getNoSellBadge(days: number) {
   if (days >= 30) return "Iron Paws";
   if (days >= 7) return "Steady Holder";
   return "Paper Hands";
+}
+
+function getHolderStatus(outflowDays: number) {
+  if (outflowDays === 0) return "No outflows detected";
+  if (outflowDays <= 2) return "Mostly holding";
+  return "Outflows detected";
+}
+
+function getHolderBadge(possibleDcaDays: number, outflowDays: number) {
+  if (possibleDcaDays >= 30 && outflowDays === 0) return "Diamond Brewer";
+  if (possibleDcaDays >= 14 && outflowDays <= 2) return "Cappuccino Chad";
+  if (possibleDcaDays >= 7) return "Double Shot Holder";
+  if (possibleDcaDays >= 1) return "KENDU Stacker";
+  return "KENDU Holder";
 }
