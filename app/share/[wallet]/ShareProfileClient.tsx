@@ -142,12 +142,9 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
 
   const tweetText = `☕ My KENDU Brew Club profile
 
-${balanceData?.total.formatted ?? "0"} KENDU held
-Possible DCA days: ${possibleDcaDays}
-Status: ${holderStatus}
-Badge: ${holderBadge}
+  Read-only. No approvals. No transactions.
 
-${shareUrl}`;
+  ${shareUrl}`;
 
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
     tweetText
