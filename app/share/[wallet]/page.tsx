@@ -24,7 +24,10 @@ export async function generateMetadata({
       ? "Shared read-only KENDU holder profile with Ethereum/Base balance and transfer-based activity data. No wallet connection. No approvals. No transactions."
       : "A read-only community tool for KENDU holders. No wallet connection. No approvals. No transactions.";
 
+  const imageUrl = `/share/${encodeURIComponent(decodedWallet)}/opengraph-image`;
+
   return {
+    metadataBase: new URL("https://kendu-brew-club.vercel.app"),
     title,
     description,
     openGraph: {
@@ -32,11 +35,20 @@ export async function generateMetadata({
       description,
       type: "website",
       siteName: "KENDU Brew Club",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: "KENDU Brew Club shared holder profile",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [imageUrl],
     },
   };
 }
