@@ -73,12 +73,19 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
   const [shareUrl, setShareUrl] = useState("");
   const [copyStatus, setCopyStatus] = useState("");
 
+  const [shareImageUrl, setShareImageUrl] = useState("");
+  const [downloadStatus, setDownloadStatus] = useState("");
+
   const validation = useMemo(() => validateWalletAddress(wallet), [wallet]);
   const isEvmWallet = validation.isValid && validation.type === "evm";
 
   useEffect(() => {
-    setShareUrl(window.location.href);
-  }, []);
+    const origin = window.location.origin;
+    const encodedWallet = encodeURIComponent(wallet);
+
+    setShareUrl(`${origin}/share/${encodedWallet}`);
+    setShareImageUrl(`${origin}/share/${encodedWallet}/opengraph-image?download=1`);
+  }, [wallet]);
 
   useEffect(() => {
     async function loadShareProfile() {
@@ -173,6 +180,48 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
 
       window.setTimeout(() => {
         setCopyStatus("");
+      }, 2000);
+    }
+  }
+
+  async function downloadShareImage() {
+    if (!shareImageUrl) return;
+
+    setDownloadStatus("Preparing...");
+
+    try {
+      const response = await fetch(shareImageUrl);
+
+      if (!response.ok) {
+        throw new Error("Failed to download image.");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `kendu-brew-profile-${shortenWallet(wallet).replace(
+        "...",
+        "-"
+      )}.png`;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(objectUrl);
+
+      setDownloadStatus("Downloaded!");
+
+      window.setTimeout(() => {
+        setDownloadStatus("");
+      }, 2000);
+    } catch {
+      setDownloadStatus("Download failed");
+
+      window.setTimeout(() => {
+        setDownloadStatus("");
       }, 2000);
     }
   }
@@ -303,6 +352,22 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
                   </button>
 
                   <a
+                    href={shareImageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-orange-300/40 px-5 py-3 text-center font-bold text-orange-200 transition hover:bg-orange-300/10"
+                  >
+                    Open image
+                  </a>
+
+                  <button
+                    onClick={downloadShareImage}
+                    className="rounded-xl border border-orange-300/40 px-5 py-3 font-bold text-orange-200 transition hover:bg-orange-300/10"
+                  >
+                    {downloadStatus || "Download PNG"}
+                  </button>
+
+                  <a
                     href={xShareUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -328,6 +393,11 @@ export function ShareProfileClient({ wallet }: { wallet: string }) {
                   </a>
                 </div>
               </div>
+
+              <p className="mt-4 text-sm text-white/50">
+                If a platform does not show the preview image correctly, use Open image or
+                Download PNG and post the card manually.
+              </p>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/40 p-4">
                 <p className="break-all font-mono text-sm text-white/60">
